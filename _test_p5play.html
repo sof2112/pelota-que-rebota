@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>test p5play</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.11.4/lib/p5.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5play@3.35.5/planck.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5play@3.35.5/p5play.min.js"></script>
+</head>
+<body>
+<script>
+function setup() {
+  createCanvas(400, 300);
+  world.gravity.y = 10;
+  window.ball = new Sprite(200, 50, 40);
+  window.ground = new Sprite(200, 290, 400, 20, 'static');
+  window.setupOk = true;
+}
+function draw() {
+  background(220);
+}
+window.__loaded = 'yes';
+</script>
+</body>
+</html>

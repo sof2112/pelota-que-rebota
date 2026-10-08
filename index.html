@@ -1,14 +1,55 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pelota que rebota</title>
-    <script src="https://cdn.jsdelivr.net/npm/p5@2.3.3/lib/p5.min.js"></script>
+    <title>Pelotita Loca</title>
+
+    <!-- Tipografía juguetona -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Chewy&display=swap" rel="stylesheet">
+
+    <style>
+        /* Reset: elimina el margen/borde blanco alrededor del canvas */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #ffd6e0;
+        }
+        canvas {
+            display: block;
+        }
+
+        /* Título centrado arriba, por encima del canvas */
+        h1 {
+            position: fixed;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%) rotate(-2deg);
+            z-index: 10;
+            pointer-events: none;
+            user-select: none;
+            font-family: 'Chewy', 'Comic Sans MS', cursive;
+            font-size: clamp(2rem, 6vw, 3.5rem);
+            color: #87ceeb;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.22);
+        }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.11.4/lib/p5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/p5.sound@0.4.1/dist/p5.sound.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/p5play@3.35.5/planck.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/p5play@3.35.5/p5play.min.js"></script>
     <script src="sketch.js"></script>
 </head>
 <body>
-    <h1>Pelota que rebota</h1>
-    
+    <h1>Pelotita Loca</h1>
 </body>
 </html>
