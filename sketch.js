@@ -10,7 +10,9 @@ Pelotita Loca (física real con p5play)
 */
 
 const RADIO = 25;
-const GRAVEDAD = 10;
+const GRAVEDAD = 8;
+const REBOTE = 0.92;
+const ROZAMIENTO = 0.05;
 
 const CELESTE_PASTEL = [135, 206, 235];
 const ROSA_PASTEL = [255, 183, 197];
@@ -18,11 +20,25 @@ const ROSA_PASTEL = [255, 183, 197];
 // En este orden va cambiando la figura en cada rebote.
 const FIGURAS = ['circle', 'triangle', 'square', 'pentagon'];
 
+// Sistema de partículas que sale de la posición del mouse.
+const VIDA_PARTICULA = 10000; // 10 segundos (ms)
+const EMISION = 2;            // partículas emitidas por frame
+const MAX_PARTICULAS = 1600;
+const COLORES_PARTICULA = [
+  [135, 206, 235], // celeste pastel
+  [255, 183, 197], // rosa pastel
+  [255, 244, 202], // amarillo pastel
+  [198, 232, 205], // verde pastel
+];
+
 let pelota;
 let muros = [];
+let particulas = [];
+let mouseActivo = false;
 let indiceFigura = 0;
 let flashRebote = 0;      // 1 = acaba de rebotar (rosa), 0 = celeste
 let cooldownRebote = 0;   // evita cambiar varias veces de golpe
+let tocandoAntes = false; // para detectar el inicio de un contacto con un borde
 let congelada = false;
 let colorCeleste, colorRosa;
 
@@ -75,8 +91,8 @@ function crearPelota(x, y) {
   } else {
     pelota = new Sprite(x, y, ladoDe(figura), figura);
   }
-  pelota.bounciness = 0.9;
-  pelota.friction = 0.05;
+  pelota.bounciness = REBOTE;
+  pelota.friction = ROZAMIENTO;
   pelota.frictionAir = 0;
   pelota.stroke = color(255);
   pelota.strokeWeight = 2;
@@ -95,10 +111,21 @@ function cambiarFigura() {
   } else {
     pelota.addCollider(0, 0, ladoDe(figura), figura);
   }
+  // El collider nuevo pierde la restitución/rozamiento: los volvemos a fijar.
+  pelota.bounciness = REBOTE;
+  pelota.friction = ROZAMIENTO;
 }
 
 function draw() {
   background(120);
+
+  // Partículas: salen del mouse y viven 10 segundos.
+  const ahora = millis();
+  if (mouseActivo && mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
+    emitirParticulas(mouseX, mouseY, ahora);
+  }
+  actualizarParticulas(ahora);
+  dibujarParticulas(ahora);
 
   // Color: celeste de base, rosa al rebotar y blanca si el cursor está encima.
   flashRebote = max(0, flashRebote - 0.05);
@@ -117,8 +144,8 @@ function draw() {
       pelota.vel.x = (pelota.vel.x >= 0 ? 1 : -1) * 2;
     }
     // Si se queda dormida abajo, le damos un salto de vez en cuando.
-    if (pelota.y > height - RADIO * 2 && abs(pelota.vel.y) < 1.5 && random() < 0.05) {
-      pelota.vel.y = -random(10, 16);
+    if (pelota.y > height - RADIO * 2.5 && abs(pelota.vel.y) < 2 && random() < 0.06) {
+      pelota.vel.y = -random(13, 19);
     }
     comprobarRebote();
   }
@@ -151,27 +178,77 @@ function actualizarCongelado() {
 }
 
 function comprobarRebote() {
-  if (cooldownRebote > 0) return;
+  let tocando = false;
   for (const m of muros) {
     if (pelota.colliding(m)) {
-      alRebotar();
-      cooldownRebote = 8;
-      return;
+      tocando = true;
+      break;
     }
   }
+  // Solo al empezar el contacto (no mientras rueda pegado al borde).
+  if (tocando && !tocandoAntes && cooldownRebote === 0) {
+    alRebotar();
+    cooldownRebote = 6;
+  }
+  tocandoAntes = tocando;
 }
 
 function alRebotar() {
   flashRebote = 1;
   cambiarFigura();
   // A veces rebota más fuerte, a veces más suave.
-  if (random() < 0.4) pelota.vel.y -= random(2, 7);
+  if (random() < 0.5) pelota.vel.y -= random(3, 8);
 
   // Sonido del rebote (si p5.sound cargó).
   if (!osc || !envolvente) return;
   const rapidez = pelota.speed;
   osc.freq(map(rapidez, 0, 20, 180, 900));
   envolvente.play();
+}
+
+// --- Sistema de partículas ---
+
+function emitirParticulas(x, y, ahora) {
+  if (particulas.length >= MAX_PARTICULAS) return;
+  for (let i = 0; i < EMISION; i++) {
+    const c = COLORES_PARTICULA[floor(random(COLORES_PARTICULA.length))];
+    particulas.push({
+      x: x + random(-4, 4),
+      y: y + random(-4, 4),
+      vx: random(-1.5, 1.5),
+      vy: random(-1.5, 1.5),
+      tam: random(4, 10),
+      nacimiento: ahora,
+      r: c[0],
+      g: c[1],
+      b: c[2],
+    });
+  }
+}
+
+function actualizarParticulas(ahora) {
+  for (let i = particulas.length - 1; i >= 0; i--) {
+    const p = particulas[i];
+    // Viven 10 segundos y luego desaparecen.
+    if (ahora - p.nacimiento >= VIDA_PARTICULA) {
+      particulas.splice(i, 1);
+      continue;
+    }
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.05; // caen un poquito
+    p.vx *= 0.99; // se van frenando
+  }
+}
+
+function dibujarParticulas(ahora) {
+  noStroke();
+  for (const p of particulas) {
+    // Se desvanecen a medida que envejecen.
+    const restante = 1 - (ahora - p.nacimiento) / VIDA_PARTICULA;
+    fill(p.r, p.g, p.b, 255 * restante);
+    circle(p.x, p.y, p.tam);
+  }
 }
 
 // Sonido: oscilador -> envolvente -> salida.
@@ -191,6 +268,11 @@ function iniciarSonido() {
 function mousePressed() {
   if (typeof userStartAudio === 'function') userStartAudio();
   audioListo = true;
+}
+
+// Las partículas solo empiezan a salir cuando el mouse se mueve.
+function mouseMoved() {
+  mouseActivo = true;
 }
 
 function touchStarted() {
